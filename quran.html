@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Quran Reader</title>
+	<link href="https://fonts.googleapis.com/css2?family=Amiri&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<style>
+		:root {
+			--primary-blue: #2A5C8A;
+			--secondary-blue: #88BDEB;
+			--dark-blue: #1A2E40;
+			--light-blue: #E6F1F8;
+			--white: #FFFFFF;
+			--text-dark: #2A403D;
+			--favorite-red: #FF4444;
+		}
+
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Amiri', serif;
+			background-color: var(--white);
+			line-height: 1.8;
+			color: var(--text-dark);
+			direction: ltr;
+			transition: all 0.3s ease;
+		}
+
+		body.night-mode {
+			background: var(--dark-blue);
+			color: var(--white);
+		}
+
+		/*body.night-mode .ayah-text {
+			/*color: var(--white);
+		}*/
+
+		.controls-container {
+			position: fixed;
+			top: 10px;
+			right: 10px;
+			display: flex;
+			gap: 10px;
+			z-index: 1000;
+		}
+
+		.controls-container button {
+			background: var(--primary-blue);
+			border: none;
+			color: var(--white);
+			cursor: pointer;
+			font-size: 1.1em;
+			padding: 8px;
+			border-radius: 50%;
+			width: 35px;
+			height: 35px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+		}
+
+		.controls-container button:hover {
+			background: var(--secondary-blue);
+			transform: scale(1.1);
+		}
+
+		.hamburger {
+			position: fixed;
+			top: 10px;
+			left: 10px;
+			width: 40px;
+			height: 40px;
+			background: var(--primary-blue);
+			border: none;
+			border-radius: 50%;
+			cursor: pointer;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
+			align-items: center;
+			z-index: 1001;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+		}
+
+		.hamburger span {
+			width: 25px;
+			height: 3px;
+			background: var(--white);
+			margin: 2px 0;
+			border-radius: 2px;
+			transition: all 0.3s ease;
+		}
+
+		.hamburger.active span:nth-child(1) {
+			transform: translateY(7px) rotate(45deg);
+		}
+
+		.hamburger.active span:nth-child(2) {
+			opacity: 0;
+		}
+
+		.hamburger.active span:nth-child(3) {
+			transform: translateY(-7px) rotate(-45deg);
+		}
+
+		.hamburger:hover {
+			background: var(--secondary-blue);
+		}
+
+		.nav-menu {
+			position: fixed;
+			top: 0;
+			left: -300px;
+			width: 300px;
+			height: 100%;
+			background: var(--primary-blue);
+			padding: 60px 20px 20px;
+			box-shadow: 2px 0 15px rgba(0,0,0,0.3);
+			z-index: 1000;
+			transition: left 0.3s ease;
+			overflow-y: auto;
+		}
+
+		.nav-menu.active {
+			left: 0;
+		}
+
+		select, #favoritesBtn, #clearFavoritesBtn, #searchInput, #autoPlayBtn {
+			padding: 8px 30px 8px 15px;
+			border: 2px solid var(--white);
+			border-radius: 8px;
+			font-size: 1em;
+			background-color: var(--white);
+			color: var(--primary-blue);
+			cursor: pointer;
+			width: 100%;
+			transition: all 0.3s ease;
+			margin: 10px 0;
+		}
+
+		#searchInput {
+			background-image: none;
+			padding: 8px 15px;
+			text-align: center;
+		}
+
+		#clearFavoritesBtn {
+			background-image: none;
+			text-align: center;
+			background-color: #ff4444;
+			color: white;
+		}
+
+		#clearFavoritesBtn:hover {
+			background-color: #cc0000;
+		}
+
+		body.night-mode select, body.night-mode #favoritesBtn, body.night-mode #clearFavoritesBtn, body.night-mode #searchInput, body.night-mode #autoPlayBtn {
+			background-color: #2A3C4D;
+			color: var(--white);
+			border-color: var(--secondary-blue);
+		}
+
+		select:hover, #favoritesBtn:hover, #clearFavoritesBtn:hover, #searchInput:hover, #autoPlayBtn:hover {
+			border-color: var(--secondary-blue);
+			box-shadow: 0 0 5px rgba(136, 189, 235, 0.5);
+		}
+
+		#autoPlayBtn.active {
+			background-color: var(--secondary-blue);
+			color: var(--white);
+		}
+
+		#ayahContainer {
+			max-width: 1200px;
+			margin: 60px auto 20px;
+			padding: 0 20px;
+		}
+
+		.ayah {
+			margin: 25px 0;
+			padding: 20px;
+			border-bottom: 1px solid var(--primary-blue);
+			position: relative;
+		}
+
+		.ayah.highlight {
+			background-color: var(--light-blue);
+			transition: background-color 0.3s ease;
+		}
+
+		.ayah-text {
+			font-size: 28px;
+			color: var(--primary-blue);
+			direction: rtl;
+			text-align: right;
+		}
+
+		.translation {
+			font-size: 18px;
+			color: var(--text-dark);
+			direction: ltr;
+			text-align: left;
+		}
+
+		body.night-mode .translation {
+			color: var(--secondary-blue);
+		}
+
+		.copy-btn, .play-btn, .share-btn, .favorite-btn, .repeat-btn {
+			padding: 8px 15px;
+			border: none;
+			border-radius: 20px;
+			background-color: var(--primary-blue);
+			color: var(--white);
+			cursor: pointer;
+			transition: all 0.3s ease;
+			margin: 5px;
+		}
+
+		.copy-btn:active, .play-btn:active, .share-btn:active, .favorite-btn:active, .repeat-btn:active {
+			transform: scale(0.95);
+		}
+
+		.favorite-btn.active {
+			background-color: var(--favorite-red);
+		}
+
+		.repeat-btn[data-repeat="ayah"], .repeat-btn[data-repeat="surah"] {
+			background-color: var(--primary-blue);
+		}
+
+		.back-btn {
+			position: fixed;
+			top: 10px;
+			left: 60px;
+			width: 40px;
+			height: 40px;
+			background: var(--primary-blue);
+			border: none;
+			border-radius: 50%;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+		}
+
+		.back-btn:hover {
+			background: var(--secondary-blue);
+		}
+
+		.back-btn i {
+			color: var(--white);
+			font-size: 1.2em;
+		}
+
+		body.night-mode .back-btn {
+			background: var(--secondary-blue);
+		}
+
+		@media (max-width: 480px) {
+			.copy-btn, .play-btn, .share-btn, .favorite-btn, .repeat-btn {
+				padding: 6px 10px;
+				font-size: 0.9em;
+			}
+			.controls-container button {
+				width: 30px;
+				height: 30px;
+				font-size: 1em;
+			}
+		}
+	</style>
+</head>
+<body>
+	<button class="hamburger" id="hamburger">
+		<span></span>
+		<span></span>
+		<span></span>
+	</button>
+
+	<div class="controls-container">
+		<button id="modeToggle" title="Night Mode"><i class="fas fa-moon"></i></button>
+		<button id="translationToggle" title="Toggle Translation"><i class="fas fa-language"></i></button>
+		<button id="fontSizeToggle" title="Toggle Font Size"><i class="fas fa-text-height"></i></button>
+	</div>
+
+	<nav class="nav-menu" id="navMenu">
+		<input type="text" id="searchInput" placeholder="Search for a Surah..">
+		<select id="surahSelect"></select>
+		<select id="ayahSelect"></select>
+		<select id="reciterSelect"></select>
+		<select id="translationSelect"></select>
+		<button id="autoPlayBtn">Auto Play</button>
+		<button id="favoritesBtn">Show Favorites</button>
+		<button id="clearFavoritesBtn">Clear All Favorites</button>
+	</nav>
+
+	<main id="ayahContainer"></main>
+	<canvas id="shareCanvas" style="display: none;"></canvas>
+
+	<script>
+		document.addEventListener('DOMContentLoaded', () => {
+			const surahSelect = document.getElementById('surahSelect');
+			const ayahSelect = document.getElementById('ayahSelect');
+			const reciterSelect = document.getElementById('reciterSelect');
+			const translationSelect = document.getElementById('translationSelect');
+			const ayahContainer = document.getElementById('ayahContainer');
+			const hamburger = document.getElementById('hamburger');
+			const navMenu = document.getElementById('navMenu');
+			const autoPlayBtn = document.getElementById('autoPlayBtn');
+			const favoritesBtn = document.getElementById('favoritesBtn');
+			const clearFavoritesBtn = document.getElementById('clearFavoritesBtn');
+			const searchInput = document.getElementById('searchInput');
+
+			let currentAudio = null;
+			let audioAyahs = [];
+			let currentAyahIndex = -1;
+			let fontSizeAyah = 28;
+			let fontSizeTranslation = 18;
+			let showTranslation = true;
+			let fontSizeLarge = false;
+			let isAutoPlaying = false;
+			let isShowingFavorites = false;
+
+			const reciters = [
+				{ name: "Mishary Rashid Alafasy", id: "ar.alafasy" },
+				{ name: "Saud Al-Shuraim", id: "ar.saoodshuraym" },
+				{ name: "Ahmed alajami", id: "ar.ahmedajamy" },
+				{ name: "Abdurrahmaan As-Sudais", id: "ar.abdurrahmaansudais" },
+				{ name: "Abdul Basit Abdul Samad", id: "ar.abdulbasitmurattal" },
+				{ name: "Abo baker alhatree", id: "ar.shaatree" }
+			];
+
+			const translations = [
+				{ name: "تفسير الميسر", id: "ar.muyassar" },
+				{ name: "English (Sahih International)", id: "en.sahih" }
+			];
+
+			const surahs = [
+				{ english: "Al-Fatiha", arabic: "الفاتحة" },
+				{ english: "Al-Baqarah", arabic: "البقرة" },
+				{ english: "Aal-E-Imran", arabic: "آل عمران" },
+				{ english: "An-Nisa", arabic: "النساء" },
+				{ english: "Al-Ma'idah", arabic: "المائدة" },
+				{ english: "Al-An'am", arabic: "الأنعام" },
+				{ english: "Al-A'raf", arabic: "الأعراف" },
+				{ english: "Al-Anfal", arabic: "الأنفال" },
+				{ english: "At-Tawbah", arabic: "التوبة" },
+				{ english: "Yunus", arabic: "يونس" },
+				{ english: "Hud", arabic: "هود" },
+				{ english: "Yusuf", arabic: "يوسف" },
+				{ english: "Ar-Ra'd", arabic: "الرعد" },
+				{ english: "Ibrahim", arabic: "إبراهيم" },
+				{ english: "Al-Hijr", arabic: "الحجر" },
+				{ english: "An-Nahl", arabic: "النحل" },
+				{ english: "Al-Isra", arabic: "الإسراء" },
+				{ english: "Al-Kahf", arabic: "الكهف" },
+				{ english: "Maryam", arabic: "مريم" },
+				{ english: "Ta-Ha", arabic: "طه" },
+				{ english: "Al-Anbiya", arabic: "الأنبياء" },
+				{ english: "Al-Hajj", arabic: "الحج" },
+				{ english: "Al-Mu’minun", arabic: "المؤمنون" },
+				{ english: "An-Nur", arabic: "النور" },
+				{ english: "Al-Furqan", arabic: "الفرقان" },
+				{ english: "Ash-Shu’ara", arabic: "الشعراء" },
+				{ english: "An-Naml", arabic: "النمل" },
+				{ english: "Al-Qasas", arabic: "القصص" },
+				{ english: "Al-Ankabut", arabic: "العنكبوت" },
+				{ english: "Ar-Rum", arabic: "الروم" },
+				{ english: "Luqman", arabic: "لقمان" },
+				{ english: "As-Sajda", arabic: "السجدة" },
+				{ english: "Al-Ahzab", arabic: "الأحزاب" },
+				{ english: "Saba", arabic: "سبأ" },
+				{ english: "Fatir", arabic: "فاطر" },
+				{ english: "Ya-Sin", arabic: "يس" },
+				{ english: "As-Saffat", arabic: "الصافات" },
+				{ english: "Sad", arabic: "ص" },
+				{ english: "Az-Zumar", arabic: "الزمر" },
+				{ english: "Ghafir", arabic: "غافر" },
+				{ english: "Fussilat", arabic: "فصلت" },
+				{ english: "Ash-Shura", arabic: "الشورى" },
+				{ english: "Az-Zukhruf", arabic: "الزخرف" },
+				{ english: "Ad-Dukhan", arabic: "الدخان" },
+				{ english: "Al-Jathiya", arabic: "الجاثية" },
+				{ english: "Al-Ahqaf", arabic: "الأحقاف" },
+				{ english: "Muhammad", arabic: "محمد" },
+				{ english: "Al-Fath", arabic: "الفتح" },
+				{ english: "Al-Hujurat", arabic: "الحجرات" },
+				{ english: "Qaf", arabic: "ق" },
+				{ english: "Adh-Dhariyat", arabic: "الذاريات" },
+				{ english: "At-Tur", arabic: "الطور" },
+				{ english: "An-Najm", arabic: "النجم" },
+				{ english: "Al-Qamar", arabic: "القمر" },
+				{ english: "Ar-Rahman", arabic: "الرحمن" },
+				{ english: "Al-Waqi'a", arabic: "الواقعة" },
+				{ english: "Al-Hadid", arabic: "الحديد" },
+				{ english: "Al-Mujadila", arabic: "المجادلة" },
+				{ english: "Al-Hashr", arabic: "الحشر" },
+				{ english: "Al-Mumtahina", arabic: "الممتحنة" },
+				{ english: "As-Saff", arabic: "الصف" },
+				{ english: "Al-Jumu'a", arabic: "الجمعة" },
+				{ english: "Al-Munafiqun", arabic: "المنافقون" },
+				{ english: "At-Taghabun", arabic: "التغابن" },
+				{ english: "At-Talaq", arabic: "الطلاق" },
+				{ english: "At-Tahrim", arabic: "التحريم" },
+				{ english: "Al-Mulk", arabic: "الملك" },
+				{ english: "Al-Qalam", arabic: "القلم" },
+				{ english: "Al-Haqqah", arabic: "الحاقة" },
+				{ english: "Al-Ma'arij", arabic: "المعارج" },
+				{ english: "Nuh", arabic: "نوح" },
+				{ english: "Al-Jinn", arabic: "الجن" },
+				{ english: "Al-Muzzammil", arabic: "المزمل" },
+				{ english: "Al-Muddathir", arabic: "المدثر" },
+				{ english: "Al-Qiyama", arabic: "القيامة" },
+				{ english: "Al-Insan", arabic: "الإنسان" },
+				{ english: "Al-Mursalat", arabic: "المرسلات" },
+				{ english: "An-Naba", arabic: "النبأ" },
+				{ english: "An-Nazi'at", arabic: "النازعات" },
+				{ english: "Abasa", arabic: "عبس" },
+				{ english: "At-Takwir", arabic: "التكوير" },
+				{ english: "Al-Infitar", arabic: "الإنفطار" },
+				{ english: "Al-Mutaffifin", arabic: "المطففين" },
+				{ english: "Al-Inshiqaq", arabic: "الإنشقاق" },
+				{ english: "Al-Buruj", arabic: "البروج" },
+				{ english: "At-Tariq", arabic: "الطارق" },
+				{ english: "Al-A'la", arabic: "الأعلى" },
+				{ english: "Al-Ghashiya", arabic: "الغاشية" },
+				{ english: "Al-Fajr", arabic: "الفجر" },
+				{ english: "Al-Balad", arabic: "البلد" },
+				{ english: "Ash-Shams", arabic: "الشمس" },
+				{ english: "Al-Lail", arabic: "الليل" },
+				{ english: "Ad-Duha", arabic: "الضحى" },
+				{ english: "Ash-Sharh", arabic: "الشرح" },
+				{ english: "At-Tin", arabic: "التين" },
+				{ english: "Al-Alaq", arabic: "العلق" },
+				{ english: "Al-Qadr", arabic: "القدر" },
+				{ english: "Al-Bayyina", arabic: "البينة" },
+				{ english: "Az-Zalzala", arabic: "الزلزلة" },
+				{ english: "Al-Adiyat", arabic: "العاديات" },
+				{ english: "Al-Qari'a", arabic: "القارعة" },
+				{ english: "At-Takathur", arabic: "التكاثر" },
+				{ english: "Al-Asr", arabic: "العصر" },
+				{ english: "Al-Humaza", arabic: "الهمزة" },
+				{ english: "Al-Fil", arabic: "الفيل" },
+				{ english: "Quraysh", arabic: "قريش" },
+				{ english: "Al-Ma'un", arabic: "الماعون" },
+				{ english: "Al-Kawthar", arabic: "الكوثر" },
+				{ english: "Al-Kafirun", arabic: "الكافرون" },
+				{ english: "An-Nasr", arabic: "النصر" },
+				{ english: "Al-Masad", arabic: "المسد" },
+				{ english: "Al-Ikhlas", arabic: "الإخلاص" },
+				{ english: "Al-Falaq", arabic: "الفلق" },
+				{ english: "An-Nas", arabic: "الناس" }
+			];
+
+			const defaultFatiha = {
+				arabic: [
+					"بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+					"ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ",
+					"ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+					"مَٰلِكِ يَوْمِ ٱلدِّينِ",
+					"إِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ",
+					"ٱهْدِنَا ٱلصِّرَٰطَ ٱلْمُسْتَقِيمَ",
+					"صِرَٰطَ ٱلَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ ٱلْمَغْضُوبِ عَلَيْهِمْ وَلَا ٱلضَّآلِّينَ"
+				],
+				english: [
+					"In the name of Allah, the Entirely Merciful, the Especially Merciful.",
+					"[All] praise is [due] to Allah, Lord of the worlds -",
+					"The Entirely Merciful, the Especially Merciful,",
+					"Sovereign of the Day of Recompense.",
+					"It is You we worship and You we ask for help.",
+					"Guide us to the straight path -",
+					"The path of those upon whom You have bestowed favor, not of those who have evoked [Your] anger or of those who are astray."
+				],
+				audio: [
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/2.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/3.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/4.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/5.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/6.mp3",
+					"https://cdn.islamic.network/quran/audio/128/ar.alafasy/7.mp3"
+				]
+			};
+
+			// Initialization
+			populateSelects();
+			surahSelect.value = "1";
+			displayDefaultFatiha();
+
+			// Event Listeners
+			hamburger.addEventListener('click', () => {
+				hamburger.classList.toggle('active');
+				navMenu.classList.toggle('active');
+			});
+
+			document.addEventListener('click', (e) => {
+				if (!navMenu.contains(e.target) && !hamburger.contains(e.target) && navMenu.classList.contains('active')) {
+					hamburger.classList.remove('active');
+					navMenu.classList.remove('active');
+				}
+			});
+
+			document.getElementById('modeToggle').addEventListener('click', () => {
+				document.body.classList.toggle('night-mode');
+				document.getElementById('modeToggle').querySelector('i').classList.toggle('fa-moon');
+				document.getElementById('modeToggle').querySelector('i').classList.toggle('fa-sun');
+			});
+
+			document.getElementById('translationToggle').addEventListener('click', () => {
+				showTranslation = !showTranslation;
+				document.querySelectorAll('.translation').forEach(t => t.style.display = showTranslation ? 'block' : 'none');
+			});
+
+			document.getElementById('fontSizeToggle').addEventListener('click', () => {
+				fontSizeLarge = !fontSizeLarge;
+				fontSizeAyah = fontSizeLarge ? 36 : 28;
+				fontSizeTranslation = fontSizeLarge ? 24 : 18;
+				document.querySelectorAll('.ayah-text').forEach(t => t.style.fontSize = `${fontSizeAyah}px`);
+				document.querySelectorAll('.translation').forEach(t => t.style.fontSize = `${fontSizeTranslation}px`);
+			});
+
+			autoPlayBtn.addEventListener('click', () => {
+				isAutoPlaying = !isAutoPlaying;
+				autoPlayBtn.classList.toggle('active');
+				autoPlayBtn.textContent = isAutoPlaying ? 'Stop Auto Play' : 'Auto Play';
+				if (isAutoPlaying && !currentAudio) playNextAyah(0);
+			});
+
+			favoritesBtn.addEventListener('click', showFavorites);
+			clearFavoritesBtn.addEventListener('click', clearAllFavorites);
+
+			surahSelect.addEventListener('change', loadSurah);
+			reciterSelect.addEventListener('change', loadSurah);
+			translationSelect.addEventListener('change', loadSurah);
+			ayahSelect.addEventListener('change', scrollToAyah);
+
+			searchInput.addEventListener('input', (e) => {
+				const query = e.target.value.trim();
+				if (query.length < 1) return loadSurah();
+				const filteredSurahs = surahs.filter(surah => 
+					surah.arabic.includes(query) || surah.english.toLowerCase().includes(query.toLowerCase())
+				);
+				surahSelect.innerHTML = '';
+				filteredSurahs.forEach((surah, index) => {
+					const originalIndex = surahs.findIndex(s => s.arabic === surah.arabic);
+					surahSelect.add(new Option(`${surah.arabic} - ${surah.english}`, originalIndex + 1));
+				});
+				if (filteredSurahs.length > 0) {
+					surahSelect.value = surahs.findIndex(s => s.arabic === filteredSurahs[0].arabic) + 1;
+					loadSurah();
+				}
+			});
+
+			function populateSelects() {
+				reciters.forEach(reciter => reciterSelect.add(new Option(reciter.name, reciter.id)));
+				translations.forEach(translation => translationSelect.add(new Option(translation.name, translation.id)));
+				surahs.forEach((surah, index) => surahSelect.add(new Option(`${surah.arabic} - ${surah.english}`, index + 1)));
+				for (let i = 1; i <= 7; i++) ayahSelect.add(new Option(`Verse ${i}`, i - 1));
+			}
+
+			function displayDefaultFatiha() {
+				audioAyahs = defaultFatiha.audio;
+				const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+				ayahContainer.innerHTML = defaultFatiha.arabic.map((ayah, index) => {
+					const isFavorite = favorites.some(fav => fav.surah === "1" && fav.ayah === index);
+					return `
+						<div class="ayah" data-index="${index}" data-surah="1">
+							<div class="ayah-text" style="font-size: ${fontSizeAyah}px">${ayah} (${index + 1})</div>
+							<div class="translation" style="font-size: ${fontSizeTranslation}px; display: ${showTranslation ? 'block' : 'none'}">${defaultFatiha.english[index]}</div>
+							<button class="copy-btn">Copy</button>
+							<button class="play-btn" data-audio="${defaultFatiha.audio[index]}"><i class="fas fa-play"></i></button>
+							<button class="share-btn" data-surah="1" data-ayah="${index}"><i class="fas fa-share-alt"></i></button>
+							<button class="favorite-btn ${isFavorite ? 'active' : ''}" data-surah="1" data-ayah="${index}"><i class="fas fa-heart"></i></button>
+							<button class="repeat-btn" data-repeat="off">Repeat Off</button>
+						</div>
+					`;
+				}).join('');
+
+				attachEventListeners();
+			}
+
+			async function loadSurah() {
+				isShowingFavorites = false;
+				const surahNumber = surahSelect.value;
+				try {
+					const audioResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${reciterSelect.value}`);
+					const audioData = await audioResponse.json();
+					const quranResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/ar`);
+					const quranData = await quranResponse.json();
+					const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${translationSelect.value}`);
+					const translationData = await translationResponse.json();
+
+					audioAyahs = audioData.data.ayahs;
+					currentAyahIndex = -1;
+					displayAyahs(quranData.data.ayahs, translationData.data.ayahs, audioAyahs);
+					populateAyahSelect(quranData.data.ayahs.length);
+				} catch (error) {
+					console.error('Error loading surah:', error);
+					ayahContainer.innerHTML = '<p>فشل تحميل السورة. يرجى التحقق من الاتصال بالإنترنت ثم إعادة تحميل الصفحة.</p>';
+				}
+			}
+
+			function populateAyahSelect(count) {
+				ayahSelect.innerHTML = '';
+				for (let i = 1; i <= count; i++) ayahSelect.add(new Option(`Verse ${i}`, i - 1));
+			}
+
+			function displayAyahs(arabicAyahs, translationAyahs, audioAyahs) {
+				const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+				ayahContainer.innerHTML = arabicAyahs.map((ayah, index) => {
+					const isFavorite = favorites.some(fav => fav.surah === surahSelect.value && fav.ayah === index);
+					return `
+						<div class="ayah" data-index="${index}" data-surah="${surahSelect.value}">
+							<div class="ayah-text" style="font-size: ${fontSizeAyah}px">${ayah.text} (${index + 1})</div>
+							<div class="translation" style="font-size: ${fontSizeTranslation}px; display: ${showTranslation ? 'block' : 'none'}">${translationAyahs[index].text}</div>
+							<button class="copy-btn">Copy</button>
+							<button class="play-btn" data-audio="${audioAyahs[index].audio}"><i class="fas fa-play"></i></button>
+							<button class="share-btn" data-surah="${surahSelect.value}" data-ayah="${index}"><i class="fas fa-share-alt"></i></button>
+							<button class="favorite-btn ${isFavorite ? 'active' : ''}" data-surah="${surahSelect.value}" data-ayah="${index}"><i class="fas fa-heart"></i></button>
+							<button class="repeat-btn" data-repeat="off">Repeat Off</button>
+						</div>
+					`;
+				}).join('');
+
+				attachEventListeners();
+			}
+
+			function attachEventListeners() {
+				document.querySelectorAll('.copy-btn').forEach(btn => {
+					btn.addEventListener('click', () => {
+						navigator.clipboard.writeText(btn.parentElement.querySelector('.ayah-text').textContent);
+						btn.textContent = 'Copied!';
+						setTimeout(() => btn.textContent = 'Copy', 2000);
+					});
+				});
+
+				document.querySelectorAll('.play-btn').forEach(btn => btn.addEventListener('click', () => toggleAudio(btn, btn.parentElement.dataset.index)));
+				document.querySelectorAll('.share-btn').forEach(btn => btn.addEventListener('click', shareAyah));
+				document.querySelectorAll('.favorite-btn').forEach(btn => btn.addEventListener('click', () => toggleFavorite(btn)));
+				document.querySelectorAll('.repeat-btn').forEach(btn => {
+					btn.addEventListener('click', () => {
+						const states = ['off', 'ayah', 'surah'];
+						let currentState = states.indexOf(btn.dataset.repeat);
+						currentState = (currentState + 1) % states.length;
+						btn.dataset.repeat = states[currentState];
+						btn.textContent = `Repeat ${states[currentState].charAt(0).toUpperCase() + states[currentState].slice(1)}`;
+					});
+				});
+			}
+
+			function toggleAudio(button, index) {
+				const audioUrl = button.dataset.audio;
+
+				if (currentAudio && !currentAudio.paused && currentAudio.src === audioUrl) {
+					currentAudio.pause();
+					button.innerHTML = '<i class="fas fa-play"></i>';
+				} else {
+					if (currentAudio) currentAudio.pause();
+					currentAudio = new Audio(audioUrl);
+					currentAudio.play();
+					button.innerHTML = '<i class="fas fa-pause"></i>';
+					currentAyahIndex = parseInt(index);
+
+					document.querySelectorAll('.play-btn').forEach(b => { if (b !== button) b.innerHTML = '<i class="fas fa-play"></i>'; });
+					document.querySelectorAll('.ayah').forEach(ayah => ayah.classList.remove('highlight'));
+					const ayahElement = document.querySelector(`.ayah[data-index="${currentAyahIndex}"]`);
+					ayahElement.classList.add('highlight');
+					ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+					currentAudio.onended = () => {
+						button.innerHTML = '<i class="fas fa-play"></i>';
+						const repeatBtn = button.parentElement.querySelector('.repeat-btn');
+						if (repeatBtn.dataset.repeat === 'ayah') {
+							toggleAudio(button, currentAyahIndex);
+						} else if (repeatBtn.dataset.repeat === 'surah' && currentAyahIndex === audioAyahs.length - 1) {
+							playNextAyah(0);
+						} else if (isAutoPlaying) {
+							if (currentAyahIndex < audioAyahs.length - 1) {
+								playNextAyah(currentAyahIndex + 1);
+							} else if (surahSelect.value < 114) {
+								surahSelect.value = parseInt(surahSelect.value) + 1;
+								loadSurah().then(() => playNextAyah(0));
+							} else {
+								isAutoPlaying = false;
+								autoPlayBtn.classList.remove('active');
+								autoPlayBtn.textContent = 'Auto Play';
+							}
+						}
+					};
+				}
+			}
+
+			function playNextAyah(index) {
+				if (index >= audioAyahs.length) return;
+				const nextBtn = document.querySelector(`.ayah[data-index="${index}"] .play-btn`);
+				if (nextBtn) toggleAudio(nextBtn, index);
+			}
+
+			function scrollToAyah() {
+				const ayahElement = document.querySelector(`.ayah[data-index="${ayahSelect.value}"]`);
+				if (ayahElement) {
+					ayahElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					const playBtn = ayahElement.querySelector('.play-btn');
+					toggleAudio(playBtn, ayahSelect.value);
+				}
+			}
+
+			function shareAyah() {
+				const surah = this.dataset.surah;
+				const ayah = this.dataset.ayah;
+				const ayahText = this.parentElement.querySelector('.ayah-text').textContent;
+				const translationText = this.parentElement.querySelector('.translation').textContent;
+				const surahName = surahs[surah - 1].arabic + " - " + surahs[surah - 1].english;
+				const shareUrl = `${window.location.origin}?surah=${surah}&ayah=${ayah}`;
+
+				// إعداد Canvas
+				const canvas = document.getElementById('shareCanvas');
+				const ctx = canvas.getContext('2d');
+				
+				// تحديد أبعاد الصورة
+				canvas.width = 600;
+				canvas.height = 400;
+
+				// تحميل صورة النمط الإسلامي
+				const patternImage = new Image();
+				patternImage.crossOrigin = "Anonymous"; // للسماح بتحميل الصورة من مصدر خارجي
+				patternImage.src = 'ros.jpg'
+
+				patternImage.onload = () => {
+					// رسم الصورة كخلفية
+					ctx.drawImage(patternImage, 0, 0, canvas.width, canvas.height);
+
+					// إضافة طبقة شفافة لتحسين القراءة
+					ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+					ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+					// إعداد الخطوط
+					ctx.textAlign = 'center';
+					ctx.fillStyle = '#2A5C8A'; // لون النص الأزرق الداكن
+
+					// النص العربي (الآية)
+					ctx.font = '40px Amiri';
+					ctx.fillText(ayahText, canvas.width / 2, 100);
+
+					// اسم السورة ورقم الآية
+					ctx.font = '24px Amiri';
+					ctx.fillText(`${surahName} (${parseInt(ayah) + 1})`, canvas.width / 2, 160);
+
+					// الترجمة
+					ctx.font = '20px Arial';
+					wrapText(ctx, translationText, canvas.width / 2, 200, 500, 30);
+
+					// رابط الموقع
+					ctx.font = '16px Arial';
+					ctx.fillText(shareUrl, canvas.width / 2, canvas.height - 30);
+
+					// تحويل Canvas إلى صورة
+					const imageData = canvas.toDataURL('image/png');
+
+					// مشاركة أو تحميل الصورة
+					if (navigator.share) {
+						const shareData = {
+							title: `Quran - ${surahName} Ayah ${parseInt(ayah) + 1}`,
+							text: `${ayahText}\n\nTranslation: ${translationText}`,
+							url: shareUrl,
+							files: [dataURLtoFile(imageData, `quran-surah-${surah}-ayah-${ayah}.png`)]
+						};
+						navigator.share(shareData).catch(err => console.error('Error sharing:', err));
+					} else {
+						const link = document.createElement('a');
+						link.href = imageData;
+						link.download = `quran-surah-${surah}-ayah-${ayah}.png`;
+						link.click();
+						this.innerHTML = '<i class="fas fa-check"></i>';
+						setTimeout(() => this.innerHTML = '<i class="fas fa-share-alt"></i>', 2000);
+						alert('تم تحميل الصورة! يمكنك مشاركتها يدويًا.');
+					}
+				};
+			}
+
+			// دالة مساعدة لتقسيم النص الطويل
+			function wrapText(context, text, x, y, maxWidth, lineHeight) {
+				const words = text.split(' ');
+				let line = '';
+				let currentY = y;
+
+				for (let n = 0; n < words.length; n++) {
+					const testLine = line + words[n] + ' ';
+					const metrics = context.measureText(testLine);
+					const testWidth = metrics.width;
+					if (testWidth > maxWidth && n > 0) {
+						context.fillText(line, x, currentY);
+						line = words[n] + ' ';
+						currentY += lineHeight;
+					} else {
+						line = testLine;
+					}
+				}
+				context.fillText(line, x, currentY);
+			}
+
+			// دالة مساعدة لتحويل Data URL إلى ملف
+			function dataURLtoFile(dataurl, filename) {
+				const arr = dataurl.split(',');
+				const mime = arr[0].match(/:(.*?);/)[1];
+				const bstr = atob(arr[1]);
+				let n = bstr.length;
+				const u8arr = new Uint8Array(n);
+				while (n--) {
+					u8arr[n] = bstr.charCodeAt(n);
+				}
+				return new File([u8arr], filename, { type: mime });
+			}
+
+			function toggleFavorite(button) {
+				const surah = button.dataset.surah;
+				const ayah = parseInt(button.dataset.ayah);
+				let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+				const existingIndex = favorites.findIndex(fav => fav.surah === surah && fav.ayah === ayah);
+
+				if (existingIndex > -1) {
+					favorites.splice(existingIndex, 1);
+					button.classList.remove('active');
+				} else {
+					favorites.push({
+						surah,
+						ayah,
+						text: button.parentElement.querySelector('.ayah-text').textContent,
+						audio: button.parentElement.querySelector('.play-btn').dataset.audio
+					});
+					button.classList.add('active');
+				}
+
+				localStorage.setItem('favorites', JSON.stringify(favorites));
+				if (isShowingFavorites) showFavorites();
+			}
+
+			function showFavorites() {
+				isShowingFavorites = true;
+				const favorites = JSON.parse(localStorage.getItem('favorites')) || [];
+				if (favorites.length === 0) {
+					ayahContainer.innerHTML = '<p>لا توجد آيات مفضلة محفوظة بعد.</p>';
+				} else {
+					ayahContainer.innerHTML = favorites.map(fav => `
+						<div class="ayah" data-surah="${fav.surah}" data-index="${fav.ayah}">
+							<div class="ayah-text" style="font-size: ${fontSizeAyah}px">${fav.text}</div>
+							<button class="play-btn" data-audio="${fav.audio}"><i class="fas fa-play"></i></button>
+							<button class="favorite-btn active" data-surah="${fav.surah}" data-ayah="${fav.ayah}"><i class="fas fa-heart"></i></button>
+						</div>
+					`).join('');
+				}
+
+				const backBtn = document.createElement('button');
+				backBtn.className = 'back-btn';
+				backBtn.innerHTML = '<i class="fas fa-arrow-left"></i>';
+				backBtn.title = 'Back to Home';
+				document.body.appendChild(backBtn);
+
+				backBtn.addEventListener('click', () => {
+					isShowingFavorites = false;
+					surahSelect.value = "1";
+					displayDefaultFatiha();
+					backBtn.remove();
+				});
+
+				document.querySelectorAll('.play-btn').forEach(btn => btn.addEventListener('click', () => toggleAudio(btn, btn.parentElement.dataset.index)));
+				document.querySelectorAll('.favorite-btn').forEach(btn => btn.addEventListener('click', () => toggleFavorite(btn)));
+			}
+
+			function clearAllFavorites() {
+				localStorage.removeItem('favorites');
+				if (isShowingFavorites) showFavorites();
+			}
+		});
+	</script>
+</body>
+</html>
