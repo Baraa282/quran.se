@@ -1,1 +1,1 @@
-# quran.se
+# quran
